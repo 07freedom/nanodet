@@ -28,6 +28,36 @@ def random_contrast(img, alpha_low, alpha_up):
     return img
 
 
+def random_noise(img, noise_list):
+    noise_type = random.choice(noise_list)
+    if noise_type == "Gaussian":
+        img_tmp = np.array(img / 255, float)
+        mat = np.random.normal(0, 0.01 ** 0.5, img.shape)
+        img = np.clip(img_tmp + mat, 0, 255)
+    else:
+        print("Noise type %s not supported")
+    return img
+
+
+def random_blur(img, blur_list):
+    blur_type = random.choice(blur_list)
+    if blur_type == "Motion":
+        degree = 6
+        angle = 45
+        M = cv2.getRotationMatrix2D((degree / 2, degree / 2), angle, 1)
+        motion_blur_kernel = np.diag(np.ones(degree))
+        motion_blur_kernel = cv2.warpAffine(motion_blur_kernel, M, (degree, degree))
+        motion_blur_kernel = motion_blur_kernel / degree
+        blurred = cv2.filter2D(img, -1, motion_blur_kernel)
+        cv2.normalize(blurred, img, 0, 255, cv2.NORM_MINMAX)
+    elif blur_type == "Gaussian":
+        img = cv2.GaussianBlur(img, (3, 3))
+    else:
+        print("Blur type %s not supported")
+
+    return img
+
+
 def random_saturation(img, alpha_low, alpha_up):
     hsv_img = cv2.cvtColor(img.astype(np.float32), cv2.COLOR_BGR2HSV)
     hsv_img[..., 1] *= random.uniform(alpha_low, alpha_up)
@@ -63,6 +93,13 @@ def color_aug_and_norm(meta, kwargs):
 
     if "saturation" in kwargs and random.randint(0, 1):
         img = random_saturation(img, *kwargs["saturation"])
+
+    if "noise" in kwargs and random.randint(0, 1):
+        img = random_noise(img, *kwargs["noise"])
+
+    if "blur" in kwargs and random.randint(0, 1):
+        img = random_blur(img, *kwargs["blur"])
+
     # cv2.imshow('trans', img)
     # cv2.waitKey(0)
     img = _normalize(img, *kwargs["normalize"])
