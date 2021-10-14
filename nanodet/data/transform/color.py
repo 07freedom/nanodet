@@ -31,11 +31,8 @@ def random_contrast(img, alpha_low, alpha_up):
 def random_noise(img, noise_list):
     noise_type = random.choice(noise_list)
     if noise_type == "Gaussian":
-        img_tmp = np.array(img / 255, float)
-        mat = np.random.normal(0, 0.01 ** 0.5, img.shape)
-        img = np.clip(img_tmp + mat, 0, 255)
-    else:
-        print("Noise type %s not supported")
+        mat = np.random.normal(0, 0.005 ** 0.5, img.shape)
+        img = np.clip(img + mat, 0, 1).astype(np.float32)
     return img
 
 
@@ -49,12 +46,9 @@ def random_blur(img, blur_list):
         motion_blur_kernel = cv2.warpAffine(motion_blur_kernel, M, (degree, degree))
         motion_blur_kernel = motion_blur_kernel / degree
         blurred = cv2.filter2D(img, -1, motion_blur_kernel)
-        cv2.normalize(blurred, img, 0, 255, cv2.NORM_MINMAX)
+        cv2.normalize(blurred, img, 0, 1, cv2.NORM_MINMAX)
     elif blur_type == "Gaussian":
-        img = cv2.GaussianBlur(img, (3, 3))
-    else:
-        print("Blur type %s not supported")
-
+        img = cv2.GaussianBlur(img, (5, 5), 0)
     return img
 
 
@@ -95,10 +89,10 @@ def color_aug_and_norm(meta, kwargs):
         img = random_saturation(img, *kwargs["saturation"])
 
     if "noise" in kwargs and random.randint(0, 1):
-        img = random_noise(img, *kwargs["noise"])
+        img = random_noise(img, kwargs["noise"])
 
     if "blur" in kwargs and random.randint(0, 1):
-        img = random_blur(img, *kwargs["blur"])
+        img = random_blur(img, kwargs["blur"])
 
     # cv2.imshow('trans', img)
     # cv2.waitKey(0)

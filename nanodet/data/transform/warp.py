@@ -46,7 +46,10 @@ def get_rotation_matrix(degree=0.0):
     :return:
     """
     R = np.eye(3)
-    a = random.uniform(-degree, degree)
+    if isinstance(degree, list):
+        a = random.choice(degree)
+    else:
+        a = random.uniform(-degree, degree)
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=1)
     return R
 
@@ -309,6 +312,7 @@ class ShapeTransform:
         scale: Tuple[int, int] = (1, 1),
         stretch: Tuple = ((1, 1), (1, 1)),
         rotation: float = 0.0,
+        rotation_directions: list = [0],
         shear: float = 0.0,
         translate: float = 0.0,
         flip: float = 0.0,
@@ -321,6 +325,7 @@ class ShapeTransform:
         self.scale_ratio = scale
         self.stretch_ratio = stretch
         self.rotation_degree = rotation
+        self.rotation_directions = rotation_directions
         self.shear_degree = shear
         self.flip_prob = flip
         self.translate_ratio = translate
@@ -347,6 +352,9 @@ class ShapeTransform:
 
         R = get_rotation_matrix(self.rotation_degree)
         C = R @ C
+
+        R_d = get_rotation_matrix(self.rotation_directions)
+        C = R_d @ C
 
         Sh = get_shear_matrix(self.shear_degree)
         C = Sh @ C
